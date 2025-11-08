@@ -1,0 +1,46 @@
+name: ScamNet SOCKS5 Scanner
+
+on:
+  workflow_dispatch:    # 手动触发
+  schedule:
+    - cron: "0 0 * * *" # 每天 00:00 UTC 自动运行一次，可选
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 最多运行6小时
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Environment
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y netcat-openbsd
+
+      - name: Make scamnet executable
+        run: chmod +x scamnet.sh
+
+      - name: Run ScamNet Scanner
+        env:
+          START_IP: 47.80.0.0
+          END_IP: 47.86.255.255
+          PORTS: 1080,8080,8888,5555
+          MAX_PROCS: 20
+        run: |
+          echo "[*] 开始扫描..."
+          ./scamnet.sh github
+
+      - name: Show results
+        run: |
+          echo "========== SOCKS5 Connected =========="
+          cat socks5_connected.txt || true
+          echo "======================================"
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: scamnet-results
+          path: |
+            socks5_connected.txt
+            logs/
